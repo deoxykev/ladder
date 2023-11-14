@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>ladder</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="/manifest.json">
 </head>
 
 <body class="antialiased text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900">
@@ -21,6 +22,11 @@
                 <input type="text" id="inputField" placeholder="Proxy Search" name="inputField" class="w-full text-sm leading-6 text-slate-400 rounded-md ring-1 ring-slate-900/10 shadow-sm py-1.5 pl-2 pr-3 hover:ring-slate-300 dark:bg-slate-800 dark:highlight-white/5 dark:hover:bg-slate-700" required autofocus>
             </div>
         </form>
+
+        <br/>
+
+        <button id="installButton" style="display: none;">Install Ladder</button>
+
         <footer class="mt-10 text-center text-slate-600 dark:text-slate-400">
             <p>
                 Code Licensed Under GPL v3.0 |
@@ -43,6 +49,66 @@
             window.location.href = '/' + url;
             return false;
         });
+    </script>
+
+
+<script>
+
+    // Check if service workers are supported
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+                console.log('Service Worker registered! Scope is:', registration.scope);
+            })
+            .catch(err => {
+                console.log('Service Worker registration failed:', err);
+            });
+    });
+}
+
+    let deferredPrompt;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent the mini-infobar from appearing on mobile
+        e.preventDefault();
+        // Stash the event so it can be triggered later.
+        deferredPrompt = e;
+        // Update UI to notify the user they can install the PWA
+        showInstallPromotion();
+    });
+
+    const installButton = document.getElementById('installButton');
+    installButton.addEventListener('click', async () => {
+        // Hide the app provided install promotion
+        hideInstallPromotion();
+        // Show the install prompt
+        deferredPrompt.prompt();
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        // Optionally, send analytics event with outcome of user choice
+        console.log(`User response to the install prompt: ${outcome}`);
+        // We've used the prompt, and can't use it again, discard it
+        deferredPrompt = null;
+    });
+
+    function showInstallPromotion() {
+        installButton.style.display = 'block';
+    }
+
+    function hideInstallPromotion() {
+        installButton.style.display = 'none';
+    }
+
+    window.addEventListener('appinstalled', () => {
+        // Hide the app-provided install promotion
+        hideInstallPromotion();
+        // Clear the deferredPrompt so it can be garbage collected
+        deferredPrompt = null;
+        // Optionally, send analytics event to indicate successful install
+        console.log('PWA was installed');
+    });
+
     </script>
 
     <style>
