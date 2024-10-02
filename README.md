@@ -6,13 +6,25 @@
 <div><img alt="License" src="https://img.shields.io/github/license/everywall/ladder"> <img alt="go.mod Go version " src="https://img.shields.io/github/go-mod/go-version/everywall/ladder"> <img alt="GitHub tag (with filter)" src="https://img.shields.io/github/v/tag/everywall/ladder"> <img alt="GitHub (Pre-)Release Date" src="https://img.shields.io/github/release-date-pre/everywall/ladder"> <img alt="GitHub Downloads all releases" src="https://img.shields.io/github/downloads/everywall/ladder/total"> <img alt="GitHub Build Status (with event)" src="https://img.shields.io/github/actions/workflow/status/everywall/ladder/release-binaries.yaml"></div>
 
 
-*Ladder is a web proxy to help bypass paywalls.* This is a selfhosted version of [1ft.io](https://1ft.io) and [12ft.io](https://12ft.io). It is inspired by [13ft](https://github.com/wasi-master/13ft).
+*Ladder is a http web proxy.* This is a selfhosted version of [1ft.io](https://1ft.io) and [12ft.io](https://12ft.io). It is inspired by [13ft](https://github.com/wasi-master/13ft).
 
 ### Why
 
 Freedom of information is an essential pillar of democracy and informed decision-making. While media organizations have legitimate financial interests, it is crucial to strike a balance between profitability and the public's right to access information. The proliferation of paywalls raises concerns about the erosion of this fundamental freedom, and it is imperative for society to find innovative ways to preserve access to vital information without compromising the sustainability of journalism. In a world where knowledge should be shared and not commodified, paywalls should be critically examined to ensure that they do not undermine the principles of an open and informed society.
 
 > **Disclaimer:** This project is intended for educational purposes only. The author does not endorse or encourage any unethical or illegal activity. Use this tool at your own risk.
+
+### How it works
+
+```mermaid
+sequenceDiagram
+    client->>+ladder: GET
+    ladder-->>ladder: apply RequestModifications
+    ladder->>+website: GET
+    website->>-ladder: 200 OK
+    ladder-->>ladder: apply ResultModifications
+    ladder->>-client: 200 OK
+```
 
 ### Features
 - [x] Bypass Paywalls
@@ -48,12 +60,12 @@ Certain sites may display missing images or encounter formatting issues. This ca
 
 ### Binary
 1) Download binary [here](https://github.com/everywall/ladder/releases/latest)
-2) Unpack and run the binary `./ladder`
+2) Unpack and run the binary `./ladder -r https://t.ly/14PSf`
 3) Open Browser (Default: http://localhost:8080)
 
 ### Docker
 ```bash
-docker run -p 8080:8080 -d --name ladder ghcr.io/everywall/ladder:latest
+docker run -p 8080:8080 -d --env RULESET=https://t.ly/14PSf --name ladder ghcr.io/everywall/ladder:latest
 ```
 
 ### Docker Compose
@@ -106,7 +118,7 @@ http://localhost:8080/ruleset
 | `LOG_URLS` | Log fetched URL's | `true` |
 | `DISABLE_FORM` | Disables URL Form Frontpage | `false` |
 | `FORM_PATH` | Path to custom Form HTML | `` |
-| `RULESET` | URL to a ruleset file | `https://raw.githubusercontent.com/everywall/ladder/main/ruleset.yaml` or `/path/to/my/rules.yaml` |
+| `RULESET` | Path or URL to a ruleset file, accepts local directories | `https://raw.githubusercontent.com/everywall/ladder-rules/main/ruleset.yaml` or `/path/to/my/rules.yaml` or `/path/to/my/rules/` |
 | `EXPOSE_RULESET` | Make your Ruleset available to other ladders | `true` |
 | `ALLOWED_DOMAINS` | Comma separated list of allowed domains. Empty = no limitations | `` |
 | `ALLOWED_DOMAINS_RULESET` | Allow Domains from Ruleset. false = no limitations | `false` |
@@ -115,9 +127,10 @@ http://localhost:8080/ruleset
 
 ### Ruleset
 
-It is possible to apply custom rules to modify the response or the requested URL. This can be used to remove unwanted or modify elements from the page. The ruleset is a YAML file that contains a list of rules for each domain and is loaded on startup
+It is possible to apply custom rules to modify the response or the requested URL. This can be used to remove unwanted or modify elements from the page. The ruleset is a YAML file, a directory with YAML Files, or an URL to a YAML file that contains a list of rules for each domain. These rules are loaded on startup.
 
-See in [ruleset.yaml](ruleset.yaml) for an example.
+There is a basic ruleset available in a separate repository [ruleset.yaml](https://raw.githubusercontent.com/everywall/ladder-rules/main/ruleset.yaml). Feel free to add your own rules and create a pull request.
+
 
 ```yaml
 - domain: example.com          # Includes all subdomains
@@ -176,7 +189,18 @@ See in [ruleset.yaml](ruleset.yaml) for an example.
 To run a development server at http://localhost:8080:
 
 ```bash
+echo "dev" > handlers/VERSION
 RULESET="./ruleset.yaml" go run cmd/main.go
+```
+
+### Optional: Live reloading development server with [cosmtrek/air](https://github.com/cosmtrek/air)
+
+Install air according to the [installation instructions](https://github.com/cosmtrek/air#installation). 
+
+Run a development server at http://localhost:8080:
+
+```bash
+air # or the path to air if you haven't added a path alias to your .bashrc or .zshrc
 ```
 
 This project uses [pnpm](https://pnpm.io/) to build a stylesheet with the [Tailwind CSS](https://tailwindcss.com/) classes. For local development, if you modify styles in `form.html`, run `pnpm build` to generate a new stylesheet.
